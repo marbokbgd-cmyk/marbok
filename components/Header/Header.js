@@ -12,6 +12,7 @@ import { MdStorefront } from "react-icons/md";
 import { useGetCurrentUser } from "@/hooks/useGetCurrentUser";
 import { useAuth } from "@/hooks/useAuth";
 import CatalogExportButton from "@/components/CatalogExportButton/CatalogExportButton";
+import { useOfferSelection } from "@/context/OfferSelectionContext";
 
 function Header({ category, setFilteredProducts, categories, stores }) {
     const { user } = useAuth();
@@ -19,137 +20,41 @@ function Header({ category, setFilteredProducts, categories, stores }) {
     const roles = useMemo(() => userData?.roles || [], [userData]);
     const isAdmin = roles.includes("admin");
     const isMerchandiser = roles.includes("merchand");
-
+    const { selectedProducts, selectedCount, clearSelection } = useOfferSelection();
     const router = useRouter();
-    const {
-        selectedStore,
-        isStoreSelectorOpen,
-        setIsStoreSelectorOpen,
-        handleStoreSelect,
-    } = useStore();
-    const pathName = router.pathname;
-    const isCategoryPage = pathName === "/category/[slug]";
-    const isMd = useMediaQuery(1000);
+    const { selectedStore, isStoreSelectorOpen, setIsStoreSelectorOpen, handleStoreSelect } = useStore();
+    const isCategoryPage = router.pathname === "/category/[slug]";
     const isLg = useMediaQuery(1380);
 
     const handleSearch = (e) => {
         const query = e.target.value.toLowerCase();
-        const filtered = category.categoryProducts.flatMap((page) =>
-            page.contentArea?.filter((area) => {
-                return (
-                    area.name.toLowerCase().includes(query) ||
-                    area.productKey.toLowerCase().includes(query)
-                );
-            })
-        );
-
-        setFilteredProducts((prevFilteredProducts) => {
-            if (query === "") {
-                return [];
-            } else {
-                return filtered;
-            }
-        });
+        const filtered = category.categoryProducts.flatMap((page) => page.contentArea?.filter((area) =>
+            area.name.toLowerCase().includes(query) || area.productKey.toLowerCase().includes(query)
+        ));
+        setFilteredProducts(() => query === "" ? [] : filtered);
     };
 
-    return (
-        <>
-            <div className={styles.logoWrapper}>
-                <Link href={`/`}>
-                    <img className={styles.logo} src="/logo.png" alt="Logo" />
-                </Link>
-                {isCategoryPage && !isLg && (
-                    <div className={styles.searchContainer}>
-                        <input
-                            type="search"
-                            placeholder="Pretraži..."
-                            onChange={handleSearch}
-                            className={styles.searchInput}
-                        />
-                        {(isAdmin || isMerchandiser) && (
-                            <button
-                                className={styles.storeButton}
-                                onClick={() => setIsStoreSelectorOpen(true)}
-                            >
-                                <MdStorefront className={styles.storeIcon} />
-                                <span className={styles.storeButtonText}>
-                                    {selectedStore
-                                        ? selectedStore.name
-                                        : "Izaberi Prodavnicu"}
-                                </span>
-                            </button>
-                        )}
-                    </div>
-                )}
-                {isCategoryPage && isLg && (
-                    <div className={styles.searchContainer}>
-                        <input
-                            type="search"
-                            placeholder="Pretraži..."
-                            onChange={handleSearch}
-                            className={styles.searchInput}
-                        />
-                    </div>
-                )}
-                {/* <Link href={`/`}>
-                    <img className={styles.logo} src="/logo.png" alt="Logo" />
-                </Link> */}
-                <div className={styles.cartNavWrapper}>
-                    {!isCategoryPage &&
-                        !isLg &&
-                        (isAdmin || isMerchandiser) && (
-                            <button
-                                className={styles.storeButton}
-                                onClick={() => setIsStoreSelectorOpen(true)}
-                            >
-                                <MdStorefront className={styles.storeIcon} />
-                                <span className={styles.storeButtonText}>
-                                    {selectedStore
-                                        ? selectedStore.name
-                                        : "Izaberi Prodavnicu"}
-                                </span>
-                            </button>
-                        )}
-                    {!isLg && (
-                        <Navigation categories={categories} isAdmin={isAdmin} />
-                    )}
-                    {user && (
-                        <CatalogExportButton categories={categories || []} />
-                    )}
-                    <Cart />
-                    {(isLg || isCategoryPage) && (
-                        <NavigationMobile
-                            category={category}
-                            categories={categories}
-                            isAdmin={isAdmin}
-                        />
-                    )}
-                </div>
-                <StoreSelector
-                    stores={stores}
-                    isOpen={isStoreSelectorOpen}
-                    onClose={() => setIsStoreSelectorOpen(false)}
-                    onStoreSelect={(store) => {
-                        handleStoreSelect(store);
-                        setIsStoreSelectorOpen(false);
-                    }}
-                />
+    return <>
+        <div className={styles.logoWrapper}>
+            <Link href="/"><img className={styles.logo} src="/logo.png" alt="Logo" /></Link>
+            {isCategoryPage && <div className={styles.searchContainer}>
+                <input type="search" placeholder="Pretraži..." onChange={handleSearch} className={styles.searchInput} />
+                {!isLg && (isAdmin || isMerchandiser) && <button className={styles.storeButton} onClick={() => setIsStoreSelectorOpen(true)}><MdStorefront className={styles.storeIcon}/><span className={styles.storeButtonText}>{selectedStore ? selectedStore.name : "Izaberi Prodavnicu"}</span></button>}
+            </div>}
+            <div className={styles.cartNavWrapper}>
+                {!isCategoryPage && !isLg && (isAdmin || isMerchandiser) && <button className={styles.storeButton} onClick={() => setIsStoreSelectorOpen(true)}><MdStorefront className={styles.storeIcon}/><span className={styles.storeButtonText}>{selectedStore ? selectedStore.name : "Izaberi Prodavnicu"}</span></button>}
+                {!isLg && <Navigation categories={categories} isAdmin={isAdmin} />}
+                {isAdmin && selectedCount > 0 && <>
+                    <span style={{fontWeight:700, whiteSpace:"nowrap"}}>Ponuda: {selectedCount}</span>
+                    <CatalogExportButton categories={categories || []} selectedProducts={selectedProducts} />
+                    <button type="button" onClick={clearSelection} style={{border:0, background:"transparent", cursor:"pointer", textDecoration:"underline"}}>Obriši izbor</button>
+                </>}
+                <Cart />
+                {(isLg || isCategoryPage) && <NavigationMobile category={category} categories={categories} isAdmin={isAdmin} />}
             </div>
-            {isLg && (isAdmin || isMerchandiser) && (
-                <button
-                    className={styles.storeButtonMobile}
-                    onClick={() => setIsStoreSelectorOpen(true)}
-                >
-                    <MdStorefront className={styles.storeIcon} />
-                    <span className={styles.storeButtonText}>
-                        {selectedStore
-                            ? selectedStore.name
-                            : "Izaberi Prodavnicu"}
-                    </span>
-                </button>
-            )}
-        </>
-    );
+            <StoreSelector stores={stores} isOpen={isStoreSelectorOpen} onClose={() => setIsStoreSelectorOpen(false)} onStoreSelect={(store) => { handleStoreSelect(store); setIsStoreSelectorOpen(false); }} />
+        </div>
+        {isLg && (isAdmin || isMerchandiser) && <button className={styles.storeButtonMobile} onClick={() => setIsStoreSelectorOpen(true)}><MdStorefront className={styles.storeIcon}/><span className={styles.storeButtonText}>{selectedStore ? selectedStore.name : "Izaberi Prodavnicu"}</span></button>}
+    </>;
 }
-
 export default Header;
