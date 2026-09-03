@@ -11,6 +11,7 @@ import { useStore } from "@/context/StoreContext";
 import { MdStorefront } from "react-icons/md";
 import { useGetCurrentUser } from "@/hooks/useGetCurrentUser";
 import { useAuth } from "@/hooks/useAuth";
+import CatalogExportButton from "@/components/CatalogExportButton/CatalogExportButton";
 
 function Header({ category, setFilteredProducts, categories, stores }) {
     const { user } = useAuth();
@@ -111,6 +112,9 @@ function Header({ category, setFilteredProducts, categories, stores }) {
                         )}
                     {!isLg && (
                         <Navigation categories={categories} isAdmin={isAdmin} />
+                    )}
+                    {user && (
+                        <CatalogExportButton categories={categories || []} />
                     )}
                     <Cart />
                     {(isLg || isCategoryPage) && (

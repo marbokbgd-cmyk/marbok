@@ -1,0 +1,54 @@
+.exportButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 8px 13px;
+    border: 1px solid #257942;
+    border-radius: 6px;
+    background: #257942;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 0.2s, opacity 0.2s;
+}
+
+.exportButton:hover:not(:disabled) {
+    background: #1c6033;
+}
+
+.exportButton:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.icon {
+    flex: 0 0 auto;
+    font-size: 19px;
+}
+
+@media only screen and (max-width: 700px) {
+    .exportButton {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
+        padding: 0;
+        border-radius: 50%;
+    }
+
+    .label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+}
