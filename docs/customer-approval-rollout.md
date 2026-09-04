@@ -9,6 +9,7 @@ Kod je pripremljen za pregled. **Ne spajati u produkciju pre podešavanja server
 - Nalozi kreirani u Firebase Authentication pre **4. septembra 2026. u 16:55:23 po vremenu u Srbiji** zadržavaju pristup, osim ako vlasnik izričito odbije/ukine pristup. Koristi se Firebase creation time, ne promenljivi datum u profilu.
 - Neodobreni korisnici vide javni katalog bez cena i poruku da čekaju odobrenje. Mogu dopuniti svoje podatke. Status se proverava pri prijavi, vraćanju u prozor, klikom na proveru i svakih 30 sekundi. API proverava odobrenje pri svakom zahtevu za zaštićene podatke/poručivanje.
 - Lozinke ostaju u Firebase Authentication; ne prikazuju se vlasniku i ne čuvaju u profilima.
+- Vlasnik dobija i stavku **Proizvodi**: pojedinačni unos/izmena/brisanje sa slikom i kontrolisani Excel uvoz do 200 redova. Podaci i slike se čuvaju u postojećem Sanity projektu.
 
 ## Potrebna podešavanja izvan GitHub-a
 
@@ -33,6 +34,7 @@ firebase deploy --only firestore:rules --project marbok-3a9e2
 4. Vlasnik odobri; kupac klikne Proveri status i dobija cene/poručivanje. Odobrenje iz korisničkog zahteva sa tuđim email poljem mora biti odbijeno.
 5. Vlasnik ukine pristup; dalji zahtevi za poručivanje su blokirani. Drugi kupac ne može da otvori tuđu porudžbinu niti profil.
 6. Proveriti PDF, Excel, izbor proizvoda kroz kategorije i štampu.
+7. U Proizvodi preuzeti Excel šablon, proveriti pregled ispravnog i pogrešnog fajla, zatim dodati jedan probni proizvod sa slikom, izmeniti ga i obrisati. Proveriti da se promene vide i u Sanity Studio.
 
 ## Posledice promene pristupa
 
@@ -45,7 +47,7 @@ firebase deploy --only firestore:rules --project marbok-3a9e2
 ## Izvršene provere
 
 - `npm run build` — uspešan produkcioni build.
-- `node --experimental-vm-modules --test tests/*.test.mjs` — 34 testa: odobrenje, postojeći nalozi, odbijanje, lažni podaci, cene, poručivanje, admin pristup i postojeći PDF/Excel/izbor proizvoda.
+- `node --experimental-vm-modules --test tests/*.test.mjs` — 42 testa: odobrenje, postojeći nalozi, odbijanje, lažni podaci, cene, poručivanje, admin pristup, postojeći PDF/Excel/izbor proizvoda i novi unos proizvoda/Excel uvoz.
 - `node tests/firestore-rules.emulator.mjs` uz Firestore emulator sa pravilima iz repozitorijuma — 21 provera prava pristupa u izolovanom `demo-marbok-approval` projektu.
 - Produkciona pravila, privatnost dataseta, opoziv tokena i prijava stvarnim nalozima nisu promenjeni niti potvrđeni ovim lokalnim proverama.
 
