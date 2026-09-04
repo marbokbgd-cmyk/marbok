@@ -61,6 +61,7 @@ function ContactForm({ selectedStore }) {
             pib: selectedStore?.pib || "",
             pass: selectedStore?.pass || "",
             items: cart.map((item) => ({
+                productId: item.productId,
                 name: item.name,
                 quantity: item.quantity,
                 productKey: item.productKey,
@@ -70,6 +71,7 @@ function ContactForm({ selectedStore }) {
 
         try {
             const order = await createOrder(orderData);
+            const confirmedItems = order.items.map(item => ({ ...cart.find(product => product.productId === item.productId), ...item }));
             const orderUrl = `${window.location.origin}/order/${order.orderNumber}`;
 
             let orderExcelUrl = null;
@@ -78,7 +80,7 @@ function ContactForm({ selectedStore }) {
                     orderNumber: order.orderNumber,
                     customer: { name: firstName, email, phone },
                     selectedStore,
-                    items: cart,
+                    items: confirmedItems,
                 });
                 orderExcelUrl = await uploadOrderExcel(
                     orderExcel,
@@ -97,7 +99,7 @@ function ContactForm({ selectedStore }) {
                 phone,
                 orderNumber: order.orderNumber,
                 orderExcelUrl: orderExcelUrl || "",
-                message: `${message || ""}\n\nLink ka potvrdi porudžbine: ${orderUrl}${excelLine}\n\nProizvodi:\n${cart
+                message: `${message || ""}\n\nLink ka potvrdi porudžbine: ${orderUrl}${excelLine}\n\nProizvodi:\n${confirmedItems
                     ?.map(
                         (item) =>
                             `proizvod: ${item.name}, kolicina: ${item.quantity}, šifra: ${item.productKey}, cena: ${item.price}`

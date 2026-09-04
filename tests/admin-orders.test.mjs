@@ -17,9 +17,9 @@ async function harness(account = { localId: 'owner-id', email: 'nikola.borisavlj
     async function load(name) {
         if (modules.has(name)) return modules.get(name);
         let module;
-        if (name === 'next-sanity') {
-            module = new SyntheticModule(['createClient'], function () {
-                this.setExport('createClient', () => ({
+        if (name === '@/server/sanityClient') {
+            module = new SyntheticModule(['sanityClient'], function () {
+                this.setExport('sanityClient', () => ({
                     delete: async query => { calls.deletion.push(query); },
                     fetch: async () => { calls.reads++; return []; },
                 }));

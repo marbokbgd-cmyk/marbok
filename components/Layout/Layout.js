@@ -1,3 +1,4 @@
+import AccountStatus from "@/components/AccountStatus/AccountStatus";
 import React, { useState } from "react";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
@@ -33,6 +34,7 @@ function Layout({ children, category, footerClassName, categories, stores }) {
                 setSearchQuery={setSearchQuery}
                 stores={stores}
             />
+            <AccountStatus />
             {children({ category, filteredProducts, searchQuery })}
             <Footer footerClassName={footerClassName} />
         </div>

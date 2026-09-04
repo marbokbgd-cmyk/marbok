@@ -29,7 +29,7 @@ function NavigationMobile({
     isAdmin,
     showCatalogExport = false,
 }) {
-    const { user, signOutUser } = useAuth();
+    const { authUser: user, signOutUser } = useAuth();
     const { data: userData } = useGetCurrentUser({ uid: user?.uid ?? null });
     const handleSignOut = async () => {
         try {
@@ -161,6 +161,8 @@ function NavigationMobile({
                                     </li>
                                 </Link>
 
+            {isAdmin && <Link href="/products" className={styles.listItem}><p className={styles.link}>Proizvodi</p></Link>}
+            {isAdmin && <Link href="/users" className={styles.listItem}><p className={styles.link}>Korisnici</p></Link>}
                                 {isAdmin && (
                                     <Link href="/orders">
                                         <li className={clsx(styles.listItem)}>

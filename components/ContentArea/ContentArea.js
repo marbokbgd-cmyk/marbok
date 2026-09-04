@@ -46,6 +46,7 @@ function ContentArea({
         image,
         price
     ) => {
+        if (!user) { toast.info("Pristup je dostupan nakon odobrenja naloga."); return; }
         const parsedQuantity = parseInt(quantity, 10);
         if (!Number.isFinite(parsedQuantity) || parsedQuantity < 1) {
             toast.error("Količina mora biti najmanje 1.");

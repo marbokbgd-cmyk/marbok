@@ -4,7 +4,7 @@ import {
     getAboutUs,
     getCategories,
     getStores,
-} from "@/sanity/sanity-utils";
+} from "@/server/content";
 import { usePages, useAboutUs, useCategories } from "@/hooks/usePages";
 import Layout from "@/components/Layout/Layout";
 import AboutUsContainer from "@/components/AboutUs/AboutUsContainer";

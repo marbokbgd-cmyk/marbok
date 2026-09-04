@@ -19,7 +19,7 @@ import styles from "./RegistrationForm.module.css";
 import { FaUser, FaPhoneAlt, FaBuilding, FaIdCard } from "react-icons/fa";
 import { FaLocationDot } from "react-icons/fa6";
 import { MdEmail, MdPassword } from "react-icons/md";
-import { createStore } from "@/sanity/sanity-utils";
+import { useAuth } from "@/hooks/useAuth";
 
 const errorMap = {
     "auth/email-already-in-use": "Email je već u upotrebi",
@@ -43,6 +43,7 @@ const CustomizedSelect = styled(Select)`
 `;
 
 export const RegistrationForm = () => {
+    const { refreshAccess } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [registrationSuccessful, setRegistrationSuccessful] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
@@ -58,6 +59,7 @@ export const RegistrationForm = () => {
     const onSubmit = async (values) => {
         if (isLoading) return;
         setIsLoading(true);
+        let createdUser = null;
 
         try {
             const userCredential = await createUserWithEmailAndPassword(
@@ -66,12 +68,14 @@ export const RegistrationForm = () => {
                 values.password
             );
 
+            createdUser = userCredential.user;
             if (userCredential.user) {
                 const userData = {
                     uid: userCredential.user.uid,
                     email: values.email,
                     phone: values.phone,
                     roles: ["user"],
+                    approvalStatus: "pending",
                     createdDay: new Date().toISOString(),
                     name: values.name,
                     companyName: values.companyName || null,
@@ -82,21 +86,12 @@ export const RegistrationForm = () => {
                 const userDocRef = doc(db, "users", userCredential.user.uid);
                 await setDoc(userDocRef, userData);
 
-                if (values.companyName) {
-                    await createStore({
-                        name: values.companyName,
-                        pib: values.pib,
-                        address: values.address,
-                        phone: values.phone,
-                        email: values.email,
-                        contactPerson: values.name || "",
-                    });
-                }
-
                 setRegistrationSuccessful(true);
-                router.push("/");
+                await refreshAccess();
+                router.push("/auth/pending");
             }
         } catch (error) {
+            if (createdUser) { router.push("/auth/pending"); }
             setErrorMessage(
                 error instanceof FirebaseError
                     ? errorMap[error.code] ?? error.message
@@ -118,23 +113,24 @@ export const RegistrationForm = () => {
                         <div className={styles.formWrapper}>
                             <div className={styles.heading}>Kreiraj nalog</div>
                             <p className={styles.intro}>
-                                Ukoliko još uvek nemaš, kreiraj svoj nalog!
+                                Unesi poslovne podatke. Cene i poručivanje biće dostupni kada Marbok odobri tvoj nalog.
                             </p>
                             <div className={styles.textFieldsWrapper}>
                                 <TextField
                                     placeholder="Ime i Prezime"
                                     icon={FaUser}
-                                    {...methods.register("name")}
+                                    {...methods.register("name", { required: "Ime i prezime su obavezni", maxLength: 200 })}
                                 />
                                 <TextField
                                     placeholder="Naziv pravnog lica"
                                     icon={FaBuilding}
-                                    {...methods.register("companyName")}
+                                    {...methods.register("companyName", { required: "Naziv firme je obavezan", maxLength: 200 })}
                                 />
                                 <TextField
                                     placeholder="PIB broj"
                                     icon={FaIdCard}
                                     {...methods.register("pib", {
+                                        required: "PIB je obavezan",
                                         pattern: {
                                             value: /^[0-9]{9}$/,
                                             message: "PIB mora imati 9 cifara",
@@ -144,7 +140,7 @@ export const RegistrationForm = () => {
                                 <TextField
                                     placeholder="Adresa"
                                     icon={FaLocationDot}
-                                    {...methods.register("address")}
+                                    {...methods.register("address", { required: "Adresa je obavezna", maxLength: 200 })}
                                 />
                                 <TextField
                                     placeholder="Telefon"
@@ -208,7 +204,7 @@ export const RegistrationForm = () => {
                             <Button
                                 btnType="submit"
                                 theme="primary"
-                                content="Nastavi"
+                                content="Pošalji zahtev za pristup"
                                 size="fullWidth"
                                 disable={
                                     isLoading ||
@@ -226,7 +222,7 @@ export const RegistrationForm = () => {
                                     className={styles.spinner}
                                 />
                                 <Typography variant="overline" marginLeft={1}>
-                                    Redirecting...
+                                    Zahtev je sačuvan…
                                 </Typography>
                             </div>
                         )}

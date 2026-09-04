@@ -6,6 +6,7 @@ const order = {
     type: "document",
     icon: MdShoppingCart,
     fields: [
+        { name: "customerUid", title: "Firebase korisnik", type: "string", readOnly: true, hidden: true },
         {
             name: "orderNumber",
             title: "Order Number",
@@ -40,6 +41,7 @@ const order = {
                     type: "object",
                     title: "Order Item",
                     fields: [
+                        { name: "productId", title: "Product ID", type: "string", readOnly: true, hidden: true },
                         { name: "name", type: "string", title: "Product Name" },
                         { name: "quantity", type: "string", title: "Quantity" },
                         {

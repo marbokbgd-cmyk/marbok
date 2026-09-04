@@ -1,11 +1,11 @@
 import { orderItems, parseOrderPrice, formatOrderPrice } from "@/utils/orderDocument";
-import { useMemo } from "react";
-import { getOrder } from "@/sanity/sanity-utils";
+import { useMemo, useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import { isOwner } from "@/utils/adminAccess";
 import { urlFromThumbnail } from "@/utils/image";
 import { formatDate } from "@/utils/dateFormat";
 import Link from "next/link";
 import styles from "./Order.module.css";
-import { useGetCurrentUser } from "@/hooks/useGetCurrentUser";
 import { useAuth } from "@/hooks/useAuth";
 
 function parsePrice(price) {
@@ -23,11 +23,28 @@ function formatPrice(price) {
     }).format(price);
 }
 
-export default function OrderConfirmation({ order }) {
-    const { user } = useAuth();
-    const { data: userData } = useGetCurrentUser({ uid: user?.uid ?? null });
-    const roles = useMemo(() => userData?.roles || [], [userData]);
-    const isAdmin = roles.includes("admin");
+export default function OrderConfirmation() {
+    const { user, loading } = useAuth();
+    const { query } = useRouter();
+    const [result, setResult] = useState(null);
+    const [error, setError] = useState("");
+    const order = result && user && result.uid === user.uid && result?.order?.orderNumber === query.orderNumber ? result.order : null;
+    useEffect(() => {
+        let active = true; setResult(null); setError("");
+        if (!user || typeof query.orderNumber !== "string") return;
+        (async () => {
+            try {
+                const token = await user.getIdToken();
+                const response = await fetch(`/api/orders/detail?orderNumber=${encodeURIComponent(query.orderNumber)}`, {
+                    headers: { Authorization: `Bearer ${token}` }, cache: "no-store",
+                });
+                const data = await response.json(); if (!response.ok) throw new Error(data.error);
+                if (active) setResult({ uid: user.uid, order: data.order });
+            } catch (error) { if (active) setError(error.message || "Porudžbina nije učitana."); }
+        })();
+        return () => { active = false; };
+    }, [user, query.orderNumber]);
+    const isAdmin = isOwner(user);
     const calculatedTotal = useMemo(
         () =>
             order?.items?.reduce(
@@ -39,7 +56,7 @@ export default function OrderConfirmation({ order }) {
         [order?.items]
     );
     const printItems = useMemo(() => orderItems(order), [order]);
-    if (!order) return <div>Porudžbina nije pronađena</div>;
+    if (!order) return <main className={styles.container}><p>{error || (loading || user ? "Učitavam porudžbinu…" : "Prijavi se odobrenim nalogom za pregled porudžbine.")}</p><Link href={isOwner(user) ? "/orders" : user ? "/" : "/auth/login"}>Nastavi</Link></main>;
 
     return (
         <div className={styles.container}>
@@ -154,14 +171,4 @@ export default function OrderConfirmation({ order }) {
             </button>
         </div>
     );
-}
-
-export async function getServerSideProps({ params }) {
-    const order = await getOrder(params.orderNumber);
-
-    return {
-        props: {
-            order,
-        },
-    };
 }
