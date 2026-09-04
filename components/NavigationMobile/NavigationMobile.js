@@ -161,6 +161,7 @@ function NavigationMobile({
                                     </li>
                                 </Link>
 
+            {isAdmin && <Link href="/products" className={styles.listItem}><p className={styles.link}>Proizvodi</p></Link>}
             {isAdmin && <Link href="/users" className={styles.listItem}><p className={styles.link}>Korisnici</p></Link>}
                                 {isAdmin && (
                                     <Link href="/orders">
