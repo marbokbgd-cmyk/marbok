@@ -1,21 +1,20 @@
 import React from "react";
-import { getCategories, getPages, getStores } from "@/sanity/sanity-utils";
+import { getCategories, getPages, getStores } from "@/server/content";
 import styles from "./page.module.css";
 import Content from "@/components/Content/Content";
 import { useCategories, usePages } from "@/hooks/usePages";
 import Layout from "@/components/Layout/Layout";
-import { createClient } from "next-sanity";
-import clientConfig from "../../sanity/config/client-config";
 
 export default function Category({
     initialCategory,
     initialPages,
     initialStores,
     slug,
-    category,
+    category: initialSelectedCategory,
 }) {
     const categories = useCategories() || initialCategory;
     const pages = usePages() || initialPages;
+    const category = categories?.find(item => item.slug?.current === slug) || initialSelectedCategory;
 
     return (
         <Layout
@@ -41,25 +40,8 @@ export async function getServerSideProps({ params }) {
     const slug = params.slug;
     const initialCategory = await getCategories();
     const initialPages = await getPages();
-    const category = await createClient(clientConfig).fetch(
-        `*[_type == "categoryPage" && slug.current == "${slug}"][0]{
-            title,
-              slug,
-                categoryProducts[]->{
-                  "image": image.asset->url,
-                  title,
-                  contentArea[]->{
-                    price,
-                    productKey,
-                    image,
-                    package,
-                    name,
-                    _id,
-                    blockProductImages,
-                  }
-                }
-              }`
-    );
+    const category = initialCategory.find(item => item.slug?.current === slug) || null;
+    if (!category) return { notFound: true };
     const initialStores = await getStores();
 
     return {

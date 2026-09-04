@@ -1,5 +1,4 @@
-import { createClient } from "next-sanity";
-import clientConfig from "@/sanity/config/client-config";
+import { sanityClient } from "@/server/sanityClient";
 import { requireOwner } from "@/server/requireOwner";
 
 export default async function handler(req, res) {
@@ -9,7 +8,7 @@ export default async function handler(req, res) {
     }
     if (!(await requireOwner(req, res))) return;
     try {
-        const orders = await createClient({ ...clientConfig, useCdn: false }).fetch(
+        const orders = await sanityClient().fetch(
             `*[_type == "order"] | order(createdAt desc) {
                 _id, orderNumber, customerName, email, phone, pib, pass,
                 totalPrice, createdAt, "itemCount": count(items)

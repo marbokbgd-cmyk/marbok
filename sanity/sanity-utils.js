@@ -1,165 +1,24 @@
-import { createClient, groq } from "next-sanity";
-import clientConfig from "./config/client-config";
-
-export async function getPages() {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "page" && _id == 'be35d245-f2fa-4f0b-b0aa-27c099c40c55'][0]{
-      content[]->{
-        "image": image.asset->url,
-        title,
-        contentArea[]->{
-          price,
-          productKey,
-          image,
-          package,
-          name,
-          _id,
-          blockProductImages,
-        }
-      }
-    }`
-    );
+import { auth } from "@/config/firebase";
+async function request(path, options = {}) {
+    const token = await auth.currentUser?.getIdToken();
+    const response = await fetch(path, { ...options, cache: "no-store", headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers,
+    } });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Podaci trenutno nisu dostupni.");
+    return result;
 }
-
-export async function getImages() {
-    return createClient(clientConfig).fetch(groq`*[_type == "heroImages"]`);
-}
-
-export async function getHeading() {
-    return createClient(clientConfig).fetch(groq`*[_type == "mainHeading"]`);
-}
-
-export async function getBrandImages() {
-    return createClient(clientConfig).fetch(groq`*[_type == "brandImages"]`);
-}
-
-export async function getAboutUs() {
-    return createClient(clientConfig).fetch(groq`*[_type == "aboutUs"]`);
-}
-
-export async function getCategories() {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "categoryPage"]{
-                title,
-                slug,
-              categoryProducts[]->{
-                "image": image.asset->url,
-                title,
-                contentArea[]->{
-                  price,
-                  productKey,
-                  image,
-                  package,
-                  name,
-                  _id,
-                  blockProductImages,
-                }
-              }
-            }`
-    );
-}
-
-export async function getStores() {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "store"]{
-            name,
-            pib,
-            address,
-            phone,
-            email,
-            contactPerson,
-            pass,
-            _id
-        }`
-    );
-}
-
-export async function createOrder(orderData) {
-    const totalPrice = orderData.items.reduce((sum, item) => {
-        const normalizedPrice = String(item.price || "")
-            .replace(/\s/g, "")
-            .replace(/\.(?=\d{3}(?:\D|$))/g, "")
-            .replace(",", ".")
-            .replace(/[^\d.-]/g, "");
-        const price = parseFloat(normalizedPrice) || 0;
-        const quantity = parseInt(item.quantity, 10) || 0;
-        return sum + price * quantity;
-    }, 0);
-
-    return createClient(clientConfig).create({
-        _type: "order",
-        orderNumber: `ORD-${Date.now()}`,
-        customerName: orderData.firstName,
-        email: orderData.email,
-        phone: orderData.phone,
-        message: orderData.message,
-        pib: orderData.pib || "",
-        pass: orderData.pass || "",
-        items: orderData.items.map((item) => ({
-            ...item,
-            _key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        })),
-        totalPrice: `${totalPrice} rsd`,
-        createdAt: new Date().toISOString(),
-    });
-}
-
-export async function uploadOrderExcel(file, orderNumber) {
-    if (!file) return null;
-
-    const asset = await createClient(clientConfig).assets.upload("file", file, {
-        filename: file.name || `MARBOK_Porudzbina_${orderNumber}.xlsx`,
-        contentType:
-            file.type ||
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    return asset?.url || null;
-}
-
-export async function getOrder(orderNumber) {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "order" && orderNumber == $orderNumber][0]{
-            ...,
-            items[] {
-                ...,
-                "productDetails": *[_type == "productInfo" && productKey == ^.productKey][0]{
-                    name,
-                    image,
-                    price,
-                    productKey
-                }
-            }
-        }`,
-        { orderNumber }
-    );
-}
-
-export async function getOrders() {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "order"] | order(createdAt desc) {
-            orderNumber,
-            customerName,
-            email,
-            phone,
-            pib,
-            pass,
-            totalPrice,
-            items,
-            createdAt,
-            _id
-        }`
-    );
-}
-
-export async function createStore(store) {
-    return createClient(clientConfig).create({
-        _type: "store",
-        name: store.name,
-        pib: store.pib,
-        address: store.address,
-        phone: store.phone,
-        email: store.email,
-        contactPerson: store.contactPerson,
-    });
-}
+const content = (kind) => request(`/api/content?kind=${kind}`).then(result => result.data);
+export const getPages = () => content("pages");
+export const getCategories = () => content("categories");
+export const getImages = () => content("images");
+export const getHeading = () => content("heading");
+export const getBrandImages = () => content("brands");
+export const getAboutUs = () => content("about");
+export const getStores = () => content("stores");
+export const createOrder = (data) => request("/api/orders/create", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+}).then(result => result.order);
+export const uploadOrderExcel = (file, orderNumber) => request(`/api/orders/excel?orderNumber=${encodeURIComponent(orderNumber)}`, {
+    method: "POST", headers: { "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }, body: file,
+}).then(result => result.url);

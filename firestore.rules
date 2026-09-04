@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner() {
+      return signedIn() && request.auth.token.email == 'nikola.borisavljevic.bgd@gmail.com';
+    }
+    function own(uid) { return signedIn() && request.auth.uid == uid; }
+    function validProfile(uid) {
+      let d = request.resource.data;
+      return d.uid == uid && d.email == request.auth.token.email
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 200
+        && d.companyName is string && d.companyName.size() > 0 && d.companyName.size() <= 200
+        && d.pib is string && d.pib.matches('^[0-9]{9}$')
+        && d.address is string && d.address.size() > 0 && d.address.size() <= 200
+        && d.phone is string && d.phone.size() > 0 && d.phone.size() <= 40;
+    }
+    match /users/{uid} {
+      allow get: if own(uid) || owner();
+      allow list: if owner();
+      allow create: if own(uid) && validProfile(uid)
+        && request.resource.data.keys().hasOnly(['uid','email','name','companyName','pib','address','phone','roles','createdDay','approvalStatus'])
+        && request.resource.data.roles == ['user']
+        && request.resource.data.approvalStatus == 'pending'
+        && request.resource.data.createdDay is string;
+      allow update: if owner() || (own(uid) && validProfile(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name','companyName','pib','address','phone']));
+      allow delete: if false;
+    }
+    // No other Firestore collection is used by this application.
+    match /{document=**} { allow read, write: if false; }
+  }
+}

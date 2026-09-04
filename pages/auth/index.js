@@ -1,7 +1,7 @@
 import Layout from "@/components/Layout/Layout";
 import styles from "./Authentication.module.css";
 import Button from "@/components/Button/Button";
-import { getPages, getCategories, getStores } from "@/sanity/sanity-utils";
+import { getPages, getCategories, getStores } from "@/server/content";
 import { usePages, useCategories } from "@/hooks/usePages";
 import { FaUserPlus, FaSignInAlt } from "react-icons/fa";
 

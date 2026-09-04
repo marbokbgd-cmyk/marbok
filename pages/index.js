@@ -7,7 +7,7 @@ import {
     getBrandImages,
     getCategories,
     getStores,
-} from "@/sanity/sanity-utils";
+} from "@/server/content";
 import {
     usePages,
     useHeroImages,

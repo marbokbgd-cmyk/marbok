@@ -1,3 +1,4 @@
+import { useStores } from "@/hooks/usePages";
 import { isOwner } from "@/utils/adminAccess";
 import NavigationMobile from "@/components/NavigationMobile/NavigationMobile";
 import styles from "@/pages/category/page.module.css";
@@ -31,6 +32,7 @@ function Header({
 }) {
     const { user } = useAuth();
     const isAdmin = isOwner(user);
+    const ownerStores = useStores();
     const canExportCatalog = isAdmin;
 
     const router = useRouter();
@@ -126,7 +128,7 @@ function Header({
                     )}
                 </div>
                 {isAdmin && <StoreSelector
-                    stores={stores}
+                    stores={ownerStores || []}
                     selectedStore={selectedStore}
                     onClearSelection={clearStoreSelection}
                     isOpen={isStoreSelectorOpen}

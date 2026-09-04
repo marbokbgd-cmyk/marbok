@@ -1,6 +1,6 @@
 import Layout from "@/components/Layout/Layout";
 import { LoginForm } from "@/components/LoginForm/LoginForm";
-import { getPages, getCategories, getStores } from "@/sanity/sanity-utils";
+import { getPages, getCategories, getStores } from "@/server/content";
 import { usePages, useCategories } from "@/hooks/usePages";
 
 function Login({ initialPages, initialCategory, initialStores }) {

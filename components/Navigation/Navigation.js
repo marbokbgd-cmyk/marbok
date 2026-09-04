@@ -10,7 +10,7 @@ import { UserAvatar } from "../UserAvatar/UserAvatar";
 
 function Navigation({ categories, isAdmin }) {
     const router = useRouter();
-    const { user, signOutUser } = useAuth();
+    const { authUser: user, signOutUser } = useAuth();
     const { data: userData } = useGetCurrentUser({ uid: user?.uid ?? null });
 
     const pathName = router.pathname;
@@ -36,6 +36,7 @@ function Navigation({ categories, isAdmin }) {
                 </p>
             </Link>
 
+            {isAdmin && <Link href="/users" className={styles.listItem}><p className={styles.link}>Korisnici</p></Link>}
             {isAdmin && (
                 <Link href="/orders" className={styles.listItem}>
                     <p
