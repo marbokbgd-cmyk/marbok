@@ -1,5 +1,6 @@
 import { createClient, groq } from "next-sanity";
 import clientConfig from "./config/client-config";
+import { applyCommercialPricingToCategories } from "@/utils/commercialPricing";
 
 export async function getPages() {
     return createClient(clientConfig).fetch(
@@ -38,7 +39,7 @@ export async function getAboutUs() {
 }
 
 export async function getCategories() {
-    return createClient(clientConfig).fetch(
+    const categories = await createClient(clientConfig).fetch(
         groq`*[_type == "categoryPage"]{
                 title,
                 slug,
@@ -57,6 +58,8 @@ export async function getCategories() {
               }
             }`
     );
+
+    return applyCommercialPricingToCategories(categories);
 }
 
 export async function getStores() {

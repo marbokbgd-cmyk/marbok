@@ -20,6 +20,7 @@ import Heading from "@/components/Heading/Heading";
 import ProductsView from "@/components/ProductsView/ProductsView";
 import Experience from "@/components/Experience/Experience";
 import BrandSlider from "@/components/BrandSlider/BrandSlider";
+import { mergeCategoryPricesIntoPages } from "@/utils/commercialPricing";
 
 function Home({
     initialPages,
@@ -35,7 +36,8 @@ function Home({
     const brandImages = useBrandImages() || initialBrandImages;
     const categories = useCategories() || initialCategory;
 
-    const newproducts = pages.content.find(
+    const pricedPages = mergeCategoryPricesIntoPages(pages, categories);
+    const newproducts = pricedPages.content.find(
         (obj) => obj.title === "Novi proizvodi"
     );
 
