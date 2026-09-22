@@ -20,6 +20,10 @@ function Content({ filteredProducts, categories }) {
         }));
     };
 
+    useEffect(() => {
+        setUpdatedFilteredProducts(filteredProducts?.filteredProducts || []);
+    }, [filteredProducts?.filteredProducts]);
+
     if (!categories || !categories.categoryProducts.length) {
         return <div>Nema proizvoda!</div>;
     }
@@ -31,10 +35,6 @@ function Content({ filteredProducts, categories }) {
             return 1;
         return 0;
     });
-
-    useEffect(() => {
-        setUpdatedFilteredProducts(filteredProducts.filteredProducts);
-    }, [filteredProducts.filteredProducts]);
 
     return (
         <div>

@@ -2,6 +2,19 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 ## Getting Started
 
+### Marbok Komercijala deployment
+
+The same repository can power the private commercial catalog without changing
+the main site. Create a separate Vercel project and set:
+
+```bash
+NEXT_PUBLIC_SITE_VARIANT=commercial
+```
+
+With this variant enabled, the whole site is restricted to the owner account
+and confectionery prices are increased by 10% at runtime. Source prices in
+Sanity and prices on the default deployment are not changed.
+
 First, run the development server:
 
 ```bash
