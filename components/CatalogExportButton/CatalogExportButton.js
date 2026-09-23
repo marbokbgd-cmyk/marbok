@@ -8,7 +8,9 @@ function imageAsDataUrl(source) {
     const originalUrl = urlFromThumbnail(source);
     if (!originalUrl) return Promise.resolve(null);
     const separator = originalUrl.includes("?") ? "&" : "?";
-    return fetch(`${originalUrl}${separator}w=320&h=320&fit=max&fm=jpg&q=78&bg=ffffff`).then(r => { if (!r.ok) throw new Error(); return r.blob(); }).then(blob => new Promise((resolve,reject) => { const reader=new FileReader(); reader.onloadend=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(blob); }));
+    const imageUrl = `${originalUrl}${separator}w=320&h=320&fit=max&fm=jpg&q=78&bg=ffffff`;
+    const proxyUrl = `/api/catalog-image?url=${encodeURIComponent(imageUrl)}`;
+    return fetch(proxyUrl).then(r => { if (!r.ok) throw new Error(); return r.blob(); }).then(blob => new Promise((resolve,reject) => { const reader=new FileReader(); reader.onloadend=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(blob); }));
 }
 
 async function createWorkbook(products) {
