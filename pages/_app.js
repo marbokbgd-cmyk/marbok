@@ -16,7 +16,7 @@ export default function MyApp({ Component, pageProps }) {
         <>
             {IS_COMMERCIAL_SITE && (
                 <Head>
-                    <title>Marbok Komercijala</title>
+                    <title>Marbok B2B</title>
                     <meta name="robots" content="noindex, nofollow" />
                 </Head>
             )}
