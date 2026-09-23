@@ -73,11 +73,10 @@ export default function CommercialAccessGate({ children }) {
         <main className={styles.page}>
             <section className={styles.card}>
                 <img src="/logo.png" alt="Marbok" className={styles.logo} />
-                <p className={styles.eyebrow}>Marbok Komercijala</p>
-                <h1 className={styles.title}>Privatni pristup</h1>
+                <p className={styles.eyebrow}>Marbok B2B</p>
+                <h1 className={styles.title}>Prijavljivanje</h1>
                 <p className={styles.description}>
-                    Prijavi se vlasničkim nalogom da otvoriš komercijalni
-                    katalog.
+                    Prijavi se da otvoriš B2B katalog.
                 </p>
                 <form onSubmit={handleSubmit} className={styles.form}>
                     <label className={styles.label}>
@@ -115,4 +114,3 @@ export default function CommercialAccessGate({ children }) {
         </main>
     );
 }
-

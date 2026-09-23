@@ -11,7 +11,7 @@ function Layout({ children, category, footerClassName, categories, stores }) {
         <div>
             <Head>
                 <title>
-                    {IS_COMMERCIAL_SITE ? "Marbok Komercijala" : "Marbok"}
+                    {IS_COMMERCIAL_SITE ? "Marbok B2B" : "Marbok"}
                 </title>
                 <link rel="shortcut icon" href="/icon.ico" />
             </Head>

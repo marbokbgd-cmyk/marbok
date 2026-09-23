@@ -1,23 +1,38 @@
 import { useQueryClient, useMutation, useQuery } from "react-query";
 
+const readCartItems = () => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const storedCart = window.localStorage.getItem("cart");
+    if (!storedCart) return [];
+
+    const parsedCart = JSON.parse(storedCart);
+    return Array.isArray(parsedCart) ? parsedCart : [];
+  } catch (error) {
+    console.warn("Sačuvana korpa nije ispravna i biće zanemarena.", error);
+    return [];
+  }
+};
+
+const writeCartItems = (items) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem("cart", JSON.stringify(items));
+  } catch (error) {
+    console.warn("Korpa nije mogla da se sačuva.", error);
+  }
+};
+
 export function useCart() {
   const queryClient = useQueryClient();
-
-  // Check if localStorage is available
-  const isLocalStorageAvailable =
-    typeof window !== "undefined" && window.localStorage;
-
-  // Retrieve cart items from local storage, if available
-  const initialCartItems = isLocalStorageAvailable
-    ? JSON.parse(localStorage.getItem("cart")) || []
-    : [];
+  const initialCartItems = readCartItems();
 
   const addToCart = useMutation(
     async (product) => {
       const newCartItems = [...initialCartItems, product];
-      if (isLocalStorageAvailable) {
-        localStorage.setItem("cart", JSON.stringify(newCartItems));
-      }
+      writeCartItems(newCartItems);
       return product;
     },
     {
@@ -30,26 +45,23 @@ export function useCart() {
   const removeFromCart = (index) => {
     const updatedCart = [...initialCartItems];
     updatedCart.splice(index, 1);
-    if (isLocalStorageAvailable) {
-      localStorage.setItem("cart", JSON.stringify(updatedCart));
-    }
+    writeCartItems(updatedCart);
     queryClient.invalidateQueries("cart"); // Invalidate the 'cart' query to refetch
   };
 
   const clearCart = () => {
-    if (isLocalStorageAvailable) {
-      localStorage.removeItem("cart");
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("cart");
+      } catch (error) {
+        console.warn("Korpa nije mogla da se obriše.", error);
+      }
     }
     queryClient.invalidateQueries("cart"); // Invalidate the 'cart' query to refetch
   };
 
   const { data: cart, isLoading } = useQuery("cart", () => {
-    // Retrieve cart items from local storage
-    if (isLocalStorageAvailable) {
-      const storedCartItems = JSON.parse(localStorage.getItem("cart")) || [];
-      return storedCartItems;
-    }
-    return [];
+    return readCartItems();
   });
   return { addToCart, removeFromCart, clearCart, cart, isLoading };
 }
