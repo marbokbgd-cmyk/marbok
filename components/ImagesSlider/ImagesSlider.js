@@ -1,7 +1,6 @@
 import React from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import styles from "./ImagesSlider.module.css";
-import Image from "next/image";
 import "swiper/css";
 import "swiper/css/pagination";
 import { Autoplay, Pagination } from "swiper";
@@ -27,11 +26,10 @@ function ImagesSlider({ images }) {
         {images.map(({ image, _id }) => {
           return (
             <SwiperSlide key={_id}>
-              <Image
+              <img
                 src={urlFromThumbnail(image)}
                 alt="hero image"
-                layout="fill"
-                objectFit="cover"
+                className={styles.image}
               />
             </SwiperSlide>
           );
