@@ -1,9 +1,11 @@
 import { createClient, groq } from "next-sanity";
 import clientConfig from "./config/client-config";
+import { auth } from "@/config/firebase";
 import { applyCommercialPricingToCategories } from "@/utils/commercialPricing";
 
 export async function getPages() {
-    return createClient(clientConfig).fetch(
+    if (typeof window !== "undefined") return browserCatalog("pages");
+    return serverClient().fetch(
         groq`*[_type == "page" && _id == 'be35d245-f2fa-4f0b-b0aa-27c099c40c55'][0]{
       content[]->{
         "image": image.asset->url,
@@ -23,23 +25,28 @@ export async function getPages() {
 }
 
 export async function getImages() {
-    return createClient(clientConfig).fetch(groq`*[_type == "heroImages"]`);
+    if (typeof window !== "undefined") return browserCatalog("images");
+    return serverClient().fetch(groq`*[_type == "heroImages"]`);
 }
 
 export async function getHeading() {
-    return createClient(clientConfig).fetch(groq`*[_type == "mainHeading"]`);
+    if (typeof window !== "undefined") return browserCatalog("heading");
+    return serverClient().fetch(groq`*[_type == "mainHeading"]`);
 }
 
 export async function getBrandImages() {
-    return createClient(clientConfig).fetch(groq`*[_type == "brandImages"]`);
+    if (typeof window !== "undefined") return browserCatalog("brands");
+    return serverClient().fetch(groq`*[_type == "brandImages"]`);
 }
 
 export async function getAboutUs() {
-    return createClient(clientConfig).fetch(groq`*[_type == "aboutUs"]`);
+    if (typeof window !== "undefined") return browserCatalog("about");
+    return serverClient().fetch(groq`*[_type == "aboutUs"]`);
 }
 
 export async function getCategories() {
-    const categories = await createClient(clientConfig).fetch(
+    if (typeof window !== "undefined") return browserCatalog("categories");
+    const categories = await serverClient().fetch(
         groq`*[_type == "categoryPage"]{
                 title,
                 slug,
@@ -63,7 +70,8 @@ export async function getCategories() {
 }
 
 export async function getStores() {
-    return createClient(clientConfig).fetch(
+    if (typeof window !== "undefined") return browserCatalog("stores");
+    return serverClient().fetch(
         groq`*[_type == "store"]{
             name,
             pib,
@@ -77,71 +85,48 @@ export async function getStores() {
     );
 }
 
-export async function createOrder(orderData) {
-    const totalPrice = orderData.items.reduce((sum, item) => {
-        const price = parseFloat(item.price.replace(/[^\d.-]/g, ""));
-        const quantity = parseInt(item.quantity);
-        return sum + price * quantity;
-    }, 0);
 
-    return createClient(clientConfig).create({
-        _type: "order",
-        orderNumber: `ORD-${Date.now()}`,
-        customerName: orderData.firstName,
-        email: orderData.email,
-        phone: orderData.phone,
-        message: orderData.message,
-        pib: orderData.pib || "",
-        pass: orderData.pass || "",
-        items: orderData.items.map((item) => ({
-            ...item,
-            _key: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        })),
-        totalPrice: `${totalPrice} rsd`,
-        createdAt: new Date().toISOString(),
+function serverClient() {
+    if (!process.env.SANITY_API_TOKEN) throw new Error("SANITY_API_TOKEN missing");
+    return createClient({ ...clientConfig, token: process.env.SANITY_API_TOKEN, useCdn: false });
+}
+
+async function browserCatalog(kind) {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("Prijava je potrebna.");
+    const response = await fetch(`/api/catalog-data?kind=${encodeURIComponent(kind)}`, {
+        headers: { Authorization: `Bearer ${token}` },
     });
+    if (!response.ok) throw new Error("Katalog nije dostupan.");
+    return (await response.json()).data;
+}
+
+export async function createOrder(data) {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("Prijava je potrebna.");
+    const response = await fetch("/api/orders/create", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Porudžbina nije sačuvana.");
+    return (await response.json()).order;
+}
+
+export async function createStore(data) {
+    const token = await auth.currentUser?.getIdToken();
+    if (!token) throw new Error("Prijava je potrebna.");
+    const response = await fetch("/api/stores/create", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error("Prodavnica nije sačuvana.");
+    return (await response.json()).store;
 }
 
 export async function getOrder(orderNumber) {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "order" && orderNumber == $orderNumber][0]{
-            ...,
-            items[] {
-                ...,
-                "productDetails": *[_type == "productInfo" && productKey == ^.productKey][0]{
-                    name,
-                    image,
-                    price,
-                    productKey
-                }
-            }
-        }`,
-        { orderNumber }
-    );
+    return serverClient().fetch(`*[_type == "order" && orderNumber == $orderNumber][0]{...,items[]{...,"productDetails": *[_type == "productInfo" && productKey == ^.productKey][0]{name,image,price,productKey}}}`, { orderNumber });
 }
 
 export async function getOrders() {
-    return createClient(clientConfig).fetch(
-        groq`*[_type == "order"] | order(createdAt desc) {
-            orderNumber,
-            customerName,
-            email,
-            phone,
-            items,
-            createdAt,
-            _id
-        }`
-    );
-}
-
-export async function createStore(store) {
-    return createClient(clientConfig).create({
-        _type: "store",
-        name: store.name,
-        pib: store.pib,
-        address: store.address,
-        phone: store.phone,
-        email: store.email,
-        contactPerson: store.contactPerson,
-    });
+    return serverClient().fetch(`*[_type == "order"] | order(createdAt desc){orderNumber,customerName,email,phone,items,createdAt,_id}`);
 }
