@@ -6,6 +6,8 @@ const PROJECT_ID = "marbok-3a9e2";
 const OWNER = "nikola.borisavljevic.bgd@gmail.com";
 
 export async function middleware(request) {
+    // The repository also builds a separate non-commercial Vercel project.
+    if (process.env.NEXT_PUBLIC_SITE_VARIANT !== "commercial") return NextResponse.next();
     const path = request.nextUrl.pathname;
     if (path === "/auth/login" || path === "/api/auth/session") return NextResponse.next();
     const token = request.cookies.get("marbok_session")?.value;
