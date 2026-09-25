@@ -14,5 +14,11 @@ function Login({ initialPages, initialCategory, initialStores }) {
 }
 export default Login;
 export async function getServerSideProps() {
-    return { props: { initialPages: { content: [] }, initialCategory: [], initialStores: [] } };
+    const initialPages = await getPages();
+    const initialCategory = await getCategories();
+    const initialStores = await getStores();
+
+    return {
+        props: { initialPages, initialCategory, initialStores },
+    };
 }

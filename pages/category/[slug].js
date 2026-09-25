@@ -41,8 +41,8 @@ export async function getServerSideProps({ params }) {
     const slug = params.slug;
     const initialCategory = await getCategories();
     const initialPages = await getPages();
-    const categoryData = await createClient({ ...clientConfig, token: process.env.SANITY_API_TOKEN, useCdn: false }).fetch(
-        `*[_type == "categoryPage" && slug.current == $slug][0]{
+    const categoryData = await createClient(clientConfig).fetch(
+        `*[_type == "categoryPage" && slug.current == "${slug}"][0]{
             title,
               slug,
                 categoryProducts[]->{
@@ -58,7 +58,7 @@ export async function getServerSideProps({ params }) {
                     blockProductImages,
                   }
                 }
-              }`, { slug }
+              }`
     );
     const category = applyCommercialPricingToCategory(categoryData);
     const initialStores = await getStores();
