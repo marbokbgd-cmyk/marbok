@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut, onIdTokenChanged } from "firebase/auth";
+import { useRouter } from "next/router";
 import { FirebaseError } from "firebase/app";
 import { auth } from "@/config/firebase";
 import { COMMERCIAL_OWNER_EMAIL } from "@/config/site";
@@ -13,19 +14,42 @@ const errorMap = {
 };
 
 export default function CommercialAccessGate({ children }) {
+    const router = useRouter();
     const { user, loading } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [sessionReady, setSessionReady] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const isOwner =
         user?.email?.toLowerCase() === COMMERCIAL_OWNER_EMAIL.toLowerCase();
 
     useEffect(() => {
         if (user && !isOwner) {
+            fetch("/api/auth/session", { method: "DELETE" });
             signOut(auth).finally(() => {
                 setErrorMessage("Ovaj sajt je dostupan samo vlasniku.");
             });
         }
     }, [isOwner, user]);
+
+    useEffect(() => onIdTokenChanged(auth, async (currentUser) => {
+        if (!currentUser || currentUser.email?.toLowerCase() !== COMMERCIAL_OWNER_EMAIL) {
+            setSessionReady(false);
+            return;
+        }
+        try {
+            const token = await currentUser.getIdToken();
+            const response = await fetch("/api/auth/session", {
+                method: "POST", headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!response.ok) throw new Error("Session verification failed");
+            setSessionReady(true);
+            if (router.pathname === "/auth/login") await router.replace("/");
+        } catch {
+            setSessionReady(false);
+            setErrorMessage("Prijava nije potvrđena. Pokušaj ponovo.");
+            await signOut(auth);
+        }
+    }), [router]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -67,7 +91,12 @@ export default function CommercialAccessGate({ children }) {
         return <div className={styles.loading}>Provera pristupa...</div>;
     }
 
-    if (isOwner) return children;
+    if (isOwner) {
+        if (!sessionReady || router.pathname === "/auth/login") {
+            return <div className={styles.loading}>Otvaram katalog...</div>;
+        }
+        return children;
+    }
 
     return (
         <main className={styles.page}>
