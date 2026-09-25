@@ -2,7 +2,6 @@ import Layout from "@/components/Layout/Layout";
 import { LoginForm } from "@/components/LoginForm/LoginForm";
 import { getPages, getCategories, getStores } from "@/sanity/sanity-utils";
 import { usePages, useCategories } from "@/hooks/usePages";
-import { IS_COMMERCIAL_SITE } from "@/config/site";
 
 function Login({ initialPages, initialCategory, initialStores }) {
     const pages = usePages() || initialPages;
@@ -15,7 +14,11 @@ function Login({ initialPages, initialCategory, initialStores }) {
 }
 export default Login;
 export async function getServerSideProps() {
-    if (IS_COMMERCIAL_SITE) return { props: { initialPages: { content: [] }, initialCategory: [], initialStores: [] } };
-    const [initialPages, initialCategory, initialStores] = await Promise.all([getPages(), getCategories(), getStores()]);
-    return { props: { initialPages, initialCategory, initialStores } };
+    const initialPages = await getPages();
+    const initialCategory = await getCategories();
+    const initialStores = await getStores();
+
+    return {
+        props: { initialPages, initialCategory, initialStores },
+    };
 }

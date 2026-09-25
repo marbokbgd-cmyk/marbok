@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { signInWithEmailAndPassword, signOut, onIdTokenChanged } from "firebase/auth";
-import { useRouter } from "next/router";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth } from "@/config/firebase";
 import { COMMERCIAL_OWNER_EMAIL } from "@/config/site";
@@ -14,7 +13,6 @@ const errorMap = {
 };
 
 export default function CommercialAccessGate({ children }) {
-    const router = useRouter();
     const { user, loading } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
@@ -23,23 +21,11 @@ export default function CommercialAccessGate({ children }) {
 
     useEffect(() => {
         if (user && !isOwner) {
-            fetch("/api/auth/session", { method: "DELETE" });
             signOut(auth).finally(() => {
                 setErrorMessage("Ovaj sajt je dostupan samo vlasniku.");
             });
         }
     }, [isOwner, user]);
-
-    useEffect(() => onIdTokenChanged(auth, async (currentUser) => {
-        if (!currentUser || currentUser.email?.toLowerCase() !== COMMERCIAL_OWNER_EMAIL) return;
-        try {
-            const token = await currentUser.getIdToken();
-            const response = await fetch("/api/auth/session", {
-                method: "POST", headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.ok && router.pathname === "/auth/login") router.replace("/");
-        } catch { /* Keep the login page available when verification fails. */ }
-    }), [router]);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -65,13 +51,6 @@ export default function CommercialAccessGate({ children }) {
             ) {
                 await signOut(auth);
                 setErrorMessage("Ovaj sajt je dostupan samo vlasniku.");
-            } else {
-                const token = await credential.user.getIdToken();
-                const response = await fetch("/api/auth/session", {
-                    method: "POST", headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!response.ok) throw new Error("Server nije potvrdio prijavu.");
-                await router.replace("/");
             }
         } catch (error) {
             setErrorMessage(
