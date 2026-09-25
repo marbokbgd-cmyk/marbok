@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { requireCommercialOwner } from "@/server/requireCommercialOwner";
+import { requirePortalUser } from "@/server/requirePortalUser";
 import { createClient } from "next-sanity";
 import clientConfig from "@/sanity/config/client-config";
 import { getCategories } from "@/sanity/sanity-utils";
@@ -11,7 +11,7 @@ function priceNumber(value) {
 
 export default async function handler(req, res) {
     if (req.method !== "POST") { res.setHeader("Allow", "POST"); return res.status(405).end(); }
-    const owner = await requireCommercialOwner(req, res);
+    const owner = await requirePortalUser(req, res);
     if (!owner) return;
     const data = req.body || {};
     const items = Array.isArray(data.items) ? data.items : [];
