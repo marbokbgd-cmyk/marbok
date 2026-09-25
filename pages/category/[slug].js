@@ -7,6 +7,7 @@ import Layout from "@/components/Layout/Layout";
 import { createClient } from "next-sanity";
 import clientConfig from "../../sanity/config/client-config";
 import { applyCommercialPricingToCategory } from "@/utils/commercialPricing";
+import { IS_COMMERCIAL_SITE } from "@/config/site";
 
 export default function Category({
     initialCategory,
@@ -41,8 +42,8 @@ export async function getServerSideProps({ params }) {
     const slug = params.slug;
     const initialCategory = await getCategories();
     const initialPages = await getPages();
-    const categoryData = await createClient(clientConfig).fetch(
-        `*[_type == "categoryPage" && slug.current == "${slug}"][0]{
+    const categoryData = await createClient(IS_COMMERCIAL_SITE ? { ...clientConfig, token: process.env.SANITY_API_TOKEN, useCdn: false } : clientConfig).fetch(
+        `*[_type == "categoryPage" && slug.current == $slug][0]{
             title,
               slug,
                 categoryProducts[]->{
@@ -58,7 +59,7 @@ export async function getServerSideProps({ params }) {
                     blockProductImages,
                   }
                 }
-              }`
+              }`, { slug }
     );
     const category = applyCommercialPricingToCategory(categoryData);
     const initialStores = await getStores();
