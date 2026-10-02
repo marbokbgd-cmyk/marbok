@@ -45,6 +45,34 @@ export async function getAboutUs() {
     return serverClient().fetch(groq`*[_type == "aboutUs"]`);
 }
 
+export function sortNewestProductsInNewProductsCategory(categories) {
+    const sortCategory = (category) => {
+        if (!category || !Array.isArray(category.categoryProducts)) return category;
+
+        return {
+            ...category,
+            categoryProducts: category.categoryProducts.map((section) => {
+                if (section?.title !== "Novi proizvodi" || !Array.isArray(section.contentArea)) {
+                    return section;
+                }
+
+                const contentArea = section.contentArea
+                    .map((product, index) => ({ product, index }))
+                    .sort((a, b) => {
+                        const dateA = Date.parse(a.product?._createdAt || "") || 0;
+                        const dateB = Date.parse(b.product?._createdAt || "") || 0;
+                        return dateB - dateA || a.index - b.index;
+                    })
+                    .map(({ product }) => product);
+
+                return { ...section, contentArea };
+            }),
+        };
+    };
+
+    return Array.isArray(categories) ? categories.map(sortCategory) : sortCategory(categories);
+}
+
 export async function getCategories() {
     if (typeof window !== "undefined" && IS_COMMERCIAL_SITE) return browserCatalog("categories");
     const categories = await serverClient().fetch(
@@ -61,13 +89,14 @@ export async function getCategories() {
                   package,
                   name,
                   _id,
+                  _createdAt,
                   blockProductImages,
                 }
               }
             }`
     );
 
-    return applyCommercialPricingToCategories(categories);
+    return sortNewestProductsInNewProductsCategory(applyCommercialPricingToCategories(categories));
 }
 
 export async function getStores() {
