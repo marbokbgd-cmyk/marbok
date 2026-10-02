@@ -1,5 +1,5 @@
 import React from "react";
-import { getCategories, getPages, getStores } from "@/sanity/sanity-utils";
+import { getCategories, getPages, getStores, sortNewestProductsInNewProductsCategory } from "@/sanity/sanity-utils";
 import styles from "./page.module.css";
 import Content from "@/components/Content/Content";
 import { useCategories, usePages } from "@/hooks/usePages";
@@ -56,12 +56,14 @@ export async function getServerSideProps({ params }) {
                     package,
                     name,
                     _id,
+                    _createdAt,
                     blockProductImages,
                   }
                 }
               }`, { slug }
     );
-    const category = applyCommercialPricingToCategory(categoryData);
+    const sortedCategoryData = sortNewestProductsInNewProductsCategory(categoryData);
+    const category = applyCommercialPricingToCategory(sortedCategoryData);
     const initialStores = await getStores();
 
     return {
